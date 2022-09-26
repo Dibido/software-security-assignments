@@ -1,0 +1,13 @@
+1.
+Runtime checking
+advantages:
+No need to indicate certain things yourself, since the compiler does it. (array bounds checking, tracing tainted data)
+Would allow for more checks since more is known at runtime, like checking things for generics in C++
+
+disadvantages:
+Performance impact for running checks at runtime.
+Your program will crash or show errors only when the specific conditions are reached, not always which makes it hard to determine the correctness or your code.
+
+
+2.
+Would lead to developer fatigue and then the devs might not use the tool at all, and some of the checks may be unnecessary for some cases and warnings may still be shown.
