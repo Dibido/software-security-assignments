@@ -1,0 +1,16 @@
+Question 1
+==========
+For doing bounds-checking & checking for tainting & missing input validation at runtime:
+
+Advantages:
+	1. There would be no need to manually annotate source code. This has a few advantages, which were already mentioned in the most recent lecture: developers that start using PREfast for an existing project would have to annotate their existing code to get the most out of the tool; and developers may neglect to annotate their code when they write it.
+	2. Preprocessor directives such as #ifdef and #define, available in languages such as C and C++, can be used to defer the choice for the bounds of (specific) buffers or the choice whether to use input validation (at specific places) until compile time. This would then make it impossible for static analysis tools which check the source code before it is compiled, such as PREfast, to determine whether these choices will lead to buffer over- or underflows or to unsafe usage of tainted data.
+
+Disadvantages:
+	1. Performing checks at runtime always incurs overhead, decreasing the program's runtime performance.
+	2. Tracking additional information at runtime increases the program's memory usage.
+	3. Performing checks at runtime only reveals problems as they occur, after which the developers may need to take the program offline to prevent the exploitation of vulnerabilities that may be caused by these problems. They may alternatively need to release a patch for or patched version of their program, which its users might not use, leaving their copies of the program broken and possibly vulnerable to attacks. Performing checks at compile time allows developers to catch errors before the program is rolled out.
+
+Question 2
+==========
+Because complaining about such unannotated methods would be raising false positives, which may annoy the user in case their program raises too many such complaints. Developers may then be less likely to use PREfast.
