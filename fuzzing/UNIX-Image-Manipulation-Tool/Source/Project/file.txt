@@ -1,0 +1,104 @@
+In file included from read.c:3,
+                 from app.c:31:
+wht.c: In function ‘iwht’:
+wht.c:291:10: error: incompatible types when assigning to type ‘double’ from type ‘void *’
+  291 |  temp2 = malloc(size * 8);
+      |          ^~~~~~
+wht.c:315:5: error: invalid type argument of unary ‘*’ (have ‘double’)
+  315 |     *(temp2 + (a * c) + k + (d * dim * c)) = 0;
+      |     ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+wht.c:317:6: error: invalid type argument of unary ‘*’ (have ‘double’)
+  317 |      *(temp2 + (a * c) + k + (d * dim * c)) = *(temp2 + (a * c) + k + (d * dim * c)) + ((double)(*(temp + (a * c) + k + (b * dim * c))) * (double)(*(H + b + (d * dim)))) / (double)dim;
+      |      ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+wht.c:317:47: error: invalid type argument of unary ‘*’ (have ‘double’)
+  317 |      *(temp2 + (a * c) + k + (d * dim * c)) = *(temp2 + (a * c) + k + (d * dim * c)) + ((double)(*(temp + (a * c) + k + (b * dim * c))) * (double)(*(H + b + (d * dim)))) / (double)dim;
+      |                                               ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+wht.c:327:5: error: ‘img’ is a pointer; did you mean to use ‘->’?
+  327 |  img.img = malloc(size);
+      |     ^
+      |     ->
+wht.c:341:7: error: incompatible type for argument 1 of ‘free’
+  341 |  free(temp2);
+      |       ^~~~~
+      |       |
+      |       double
+In file included from app.c:2:
+/usr/include/stdlib.h:565:25: note: expected ‘void *’ but argument is of type ‘double’
+  565 | extern void free (void *__ptr) __THROW;
+      |                   ~~~~~~^~~~~
+In file included from app.c:32:
+write.c: In function ‘writeToImage’:
+write.c:23:19: error: ‘ext’ undeclared (first use in this function); did you mean ‘exp’?
+   23 |   else if (strcmp(ext, "png") == 0)
+      |                   ^~~
+      |                   exp
+write.c:23:19: note: each undeclared identifier is reported only once for each function it appears in
+write.c:25:32: error: ‘temp’ undeclared (first use in this function)
+   25 |    FILE *output = fopen(strcat(temp, ".png"), "wb");
+      |                                ^~~~
+In file included from app.c:35:
+edge.c: In function ‘detectEdge’:
+edge.c:122:9: warning: ‘return’ with no value, in function returning non-void
+  122 |         return;
+      |         ^~~~~~
+edge.c:8:13: note: declared here
+    8 | struct buff detectEdge(char *orientation, char *type, struct buff image)
+      |             ^~~~~~~~~~
+edge.c: In function ‘convolve3X3’:
+edge.c:133:5: warning: implicit declaration of function ‘gets’; did you mean ‘fgets’? [-Wimplicit-function-declaration]
+  133 |     gets(input);
+      |     ^~~~
+      |     fgets
+In file included from /usr/include/gtk-2.0/gtk/gtkobject.h:37,
+                 from /usr/include/gtk-2.0/gtk/gtkwidget.h:36,
+                 from /usr/include/gtk-2.0/gtk/gtkcontainer.h:35,
+                 from /usr/include/gtk-2.0/gtk/gtkbin.h:35,
+                 from /usr/include/gtk-2.0/gtk/gtkwindow.h:36,
+                 from /usr/include/gtk-2.0/gtk/gtkdialog.h:35,
+                 from /usr/include/gtk-2.0/gtk/gtkaboutdialog.h:32,
+                 from /usr/include/gtk-2.0/gtk/gtk.h:33,
+                 from display.c:6,
+                 from app.c:36:
+/usr/include/gtk-2.0/gtk/gtktypeutils.h: At top level:
+/usr/include/gtk-2.0/gtk/gtktypeutils.h:236:1: warning: ‘GTypeDebugFlags’ is deprecated [-Wdeprecated-declarations]
+  236 | void            gtk_type_init   (GTypeDebugFlags    debug_flags);
+      | ^~~~
+In file included from /usr/include/glib-2.0/gobject/gobject.h:24,
+                 from /usr/include/glib-2.0/gobject/gbinding.h:29,
+                 from /usr/include/glib-2.0/glib-object.h:22,
+                 from /usr/include/glib-2.0/gio/gioenums.h:28,
+                 from /usr/include/glib-2.0/gio/giotypes.h:28,
+                 from /usr/include/glib-2.0/gio/gio.h:26,
+                 from /usr/include/gtk-2.0/gdk/gdkapplaunchcontext.h:30,
+                 from /usr/include/gtk-2.0/gdk/gdk.h:32,
+                 from /usr/include/gtk-2.0/gtk/gtk.h:32,
+                 from display.c:6,
+                 from app.c:36:
+/usr/include/glib-2.0/gobject/gtype.h:679:1: note: declared here
+  679 | {
+      | ^
+In file included from /usr/include/gtk-2.0/gtk/gtktoolitem.h:31,
+                 from /usr/include/gtk-2.0/gtk/gtktoolbutton.h:30,
+                 from /usr/include/gtk-2.0/gtk/gtkmenutoolbutton.h:30,
+                 from /usr/include/gtk-2.0/gtk/gtk.h:126,
+                 from display.c:6,
+                 from app.c:36:
+/usr/include/gtk-2.0/gtk/gtktooltips.h:73:3: warning: ‘GTimeVal’ is deprecated: Use 'GDateTime' instead [-Wdeprecated-declarations]
+   73 |   GTimeVal last_popdown;
+      |   ^~~~~~~~
+In file included from /usr/include/glib-2.0/glib/galloca.h:32,
+                 from /usr/include/glib-2.0/glib.h:30,
+                 from /usr/include/glib-2.0/gobject/gbinding.h:28,
+                 from /usr/include/glib-2.0/glib-object.h:22,
+                 from /usr/include/glib-2.0/gio/gioenums.h:28,
+                 from /usr/include/glib-2.0/gio/giotypes.h:28,
+                 from /usr/include/glib-2.0/gio/gio.h:26,
+                 from /usr/include/gtk-2.0/gdk/gdkapplaunchcontext.h:30,
+                 from /usr/include/gtk-2.0/gdk/gdk.h:32,
+                 from /usr/include/gtk-2.0/gtk/gtk.h:32,
+                 from display.c:6,
+                 from app.c:36:
+/usr/include/glib-2.0/glib/gtypes.h:547:8: note: declared here
+  547 | struct _GTimeVal
+      |        ^~~~~~~~~
+make: *** [Makefile:3: run] Error 1
