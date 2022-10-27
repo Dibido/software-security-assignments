@@ -1527,8 +1527,12 @@ static void free_truecolor_image_data(gdImagePtr oim)
 /* liq requires 16 byte aligned heap memory */
 static void *malloc16(size_t size)
 {
+#ifndef _WIN32
 	void *p;
 	return posix_memalign(&p, 16, size) == 0 ? p : NULL;
+#else
+	return _aligned_malloc(16, size);
+#endif
 }
 #endif
 
@@ -1589,7 +1593,7 @@ static int gdImageTrueColorToPaletteBody (gdImagePtr oim, int dither, int colors
 
 
 	if (oim->paletteQuantizationMethod == GD_QUANT_NEUQUANT) {
-		if (cimP) { /* NeuQuant alwasy creates a copy, so the new blank image can't be used */
+		if (cimP) { /* NeuQuant always creates a copy, so the new blank image can't be used */
 			gdImageDestroy(nim);
 		}
 		nim = gdImageNeuQuant(oim, colorsWanted, oim->paletteQuantizationSpeed ? oim->paletteQuantizationSpeed : 2);
@@ -1703,6 +1707,9 @@ static int gdImageTrueColorToPaletteBody (gdImagePtr oim, int dither, int colors
 	select_colors (oim, nim, cquantize, colorsWanted);
 	zeroHistogram (cquantize->histogram);
 	if (dither) {
+		if (cquantize->error_limiter == NULL) {
+			goto outOfMemory;
+		}
 		pass2_fs_dither (oim, nim, cquantize);
 	} else {
 		pass2_no_dither (oim, nim, cquantize);

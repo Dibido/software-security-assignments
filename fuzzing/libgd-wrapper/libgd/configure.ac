@@ -1,10 +1,10 @@
 # Process this file with autoconf to produce a configure script.
 # Configure template for gd library
 
-AC_PREREQ(2.64)
+AC_PREREQ([2.69])
 
 # We extract version numbers from src/versions.h
-define([gv],[perl config/getver.pl ]$1)
+define([gv],[config/getver.sh ]$1)
 
 m4_define([gd_MAJOR],esyscmd(gv(MAJOR)))dnl
 m4_define([gd_MINOR],esyscmd(gv(MINOR)))dnl
@@ -12,7 +12,7 @@ m4_define([gd_REVISION],esyscmd(gv(RELEASE)))dnl
 m4_define([gd_EXTRA],esyscmd(gv(EXTRA)))dnl
 m4_define([gd_PKG_VERSION],[gd_MAJOR.gd_MINOR.gd_REVISION]gd_EXTRA)]dnl
 
-AC_INIT([GD], gd_PKG_VERSION, [https://github.com/libgd/libgd/issues], [libgd], [http://lib.gd])
+AC_INIT([GD], gd_PKG_VERSION, [https://github.com/libgd/libgd/issues], [libgd], [https://lib.gd])
 AC_CONFIG_SRCDIR([src/gd.c])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR([m4])
@@ -104,9 +104,9 @@ AX_OPENMP()
 dnl We should default this to off in future releases.
 AC_MSG_CHECKING([whether to support gd image formats])
 AC_ARG_ENABLE([gd-formats],
-  [AS_HELP_STRING([--disable-gd-formats], [Disable support for the legacy/testing gd image formats])],
+  [AS_HELP_STRING([--enable-gd-formats], [Enable support for the legacy/testing gd image formats])],
   [gd_enable_gd_formats=$enableval],
-  [gd_enable_gd_formats=yes])
+  [gd_enable_gd_formats=no])
 AC_MSG_RESULT([$gd_enable_gd_formats])
 if test "$gd_enable_gd_formats" = yes; then
   gd_ac_value=1
@@ -123,7 +123,7 @@ dnl $2 - GD feature name to track
 dnl $3 - lower case name for user
 dnl $4 - test for the feature
 dnl The test code should set gd_found_lib=yes to indicate success.
-m4_define([GD_LIB_CHECK], [dnl
+m4_define([_GD_LIB_CHECK], [dnl
   dnl Export the flag for the user to leverage.  No other logic here.
   AC_MSG_CHECKING([whether to support $3])
   AC_ARG_WITH([$3],
@@ -179,22 +179,23 @@ m4_define([GD_LIB_CHECK], [dnl
   AM_CONDITIONAL([HAVE_$1], test "$gd_found_lib" = yes)
   gd_with_$1=$gd_found_lib
 ])
+dnl Helper to avoid repeating m4_tolower() a lot.
+m4_define([GD_LIB_CHECK], [_GD_LIB_CHECK([$1], [$2], m4_tolower([$2]), [$3])])dnl
 
 dnl Helper macro for working with external libraries with pkg-config support.
-dnl GD_LIB_PKG_CHECK([SYM], [FEATURE], [name], [pkg-config module], [...fallback test...])
+dnl GD_LIB_PKG_CHECK([SYM], [FEATURE], [pkg-config module], [...fallback test...])
 dnl $1 - upper case symbol
 dnl $2 - GD feature name to track
-dnl $3 - lower case name for user
-dnl $4 - pkg-config module to look for
-dnl $5 - fallback test for the feature
+dnl $3 - pkg-config module to look for
+dnl $4 - fallback test for the feature
 m4_define([GD_LIB_PKG_CHECK], [dnl
-  GD_LIB_CHECK([$1], [$2], [$3], [dnl
-    PKG_CHECK_MODULES([$1], [$4], [gd_found_lib=yes gd_require_pkg_name="$4"], [$5])
+  GD_LIB_CHECK([$1], [$2], [dnl
+    PKG_CHECK_MODULES([$1], [$3], [gd_found_lib=yes gd_require_pkg_name="$3"], [$4])
   ])
 ])
 
 dnl Check for zlib support.
-GD_LIB_PKG_CHECK([LIBZ], [ZLIB], [zlib], [zlib], [dnl
+GD_LIB_PKG_CHECK([LIBZ], [ZLIB], [zlib], [dnl
   AC_CHECK_LIB([z], [deflate], [dnl
     AS_VAR_APPEND([LIBZ_LIBS], [" -lz"])
     gd_found_lib=yes
@@ -202,22 +203,31 @@ GD_LIB_PKG_CHECK([LIBZ], [ZLIB], [zlib], [zlib], [dnl
 ])
 
 dnl Check for libpng support.
-GD_LIB_PKG_CHECK([LIBPNG], [PNG], [png], [libpng], [
+GD_LIB_PKG_CHECK([LIBPNG], [PNG], [libpng], [
   LIBPNG_CONFIG=$gd_with_lib/bin/libpng-config
+  AC_MSG_CHECKING([for $LIBPNG_CONFIG script])
   if test -e "$LIBPNG_CONFIG"; then
     LIBPNG_CFLAGS=`$LIBPNG_CONFIG --cflags`
     LIBPNG_LIBS=`$LIBPNG_CONFIG --ldflags`
+    AC_MSG_RESULT(yes)
     gd_found_lib=yes
+  else
+    AC_MSG_RESULT(no)
   fi
 ])
 
 dnl Check for FreeType support.
-GD_LIB_PKG_CHECK([LIBFREETYPE], [FREETYPE], [freetype], [freetype2 >= 9.8.3], [
+dnl NB: "9.8.3" corresponds to freetype-2.1.10.
+GD_LIB_PKG_CHECK([LIBFREETYPE], [FREETYPE], [freetype2 >= 9.8.3], [
   FREETYPE_CONFIG=$gd_with_lib/bin/freetype-config
+  AC_MSG_CHECKING([for $FREETYPE_CONFIG script])
   if test -e "$FREETYPE_CONFIG"; then
     LIBFREETYPE_CFLAGS=`$FREETYPE_CONFIG --cflags`
     LIBFREETYPE_LIBS=`$FREETYPE_CONFIG --libs`
+    AC_MSG_RESULT(yes)
     gd_found_lib=yes
+  else
+    AC_MSG_RESULT(no)
   fi
 ])
 if test "$gd_with_LIBFREETYPE" = "yes"; then
@@ -225,7 +235,7 @@ if test "$gd_with_LIBFREETYPE" = "yes"; then
 fi
 
 dnl Check for Raqm support.
-GD_LIB_PKG_CHECK([LIBRAQM], [RAQM], [raqm], [raqm], [
+GD_LIB_PKG_CHECK([LIBRAQM], [RAQM], [raqm], [
   AC_CHECK_LIB([raqm], [raqm_create], [dnl
     AS_VAR_APPEND([LIBRAQM_LIBS], [" -lraqm -lfreetype"])
     gd_found_lib=yes
@@ -233,7 +243,7 @@ GD_LIB_PKG_CHECK([LIBRAQM], [RAQM], [raqm], [raqm], [
 ])
 
 dnl Check for fontconfig support.
-GD_LIB_PKG_CHECK([LIBFONTCONFIG], [FONTCONFIG], [fontconfig], [fontconfig], [
+GD_LIB_PKG_CHECK([LIBFONTCONFIG], [FONTCONFIG], [fontconfig], [
   AC_CHECK_LIB([fontconfig], [FcInit], [dnl
     AS_VAR_APPEND([LIBFONTCONFIG_LIBS], [" -lfontconfig"])
     gd_found_lib=yes
@@ -241,7 +251,7 @@ GD_LIB_PKG_CHECK([LIBFONTCONFIG], [FONTCONFIG], [fontconfig], [fontconfig], [
 ])
 
 dnl Check for jpeg support.
-GD_LIB_PKG_CHECK([LIBJPEG], [JPEG], [jpeg], [libjpeg], [
+GD_LIB_PKG_CHECK([LIBJPEG], [JPEG], [libjpeg], [
   AC_CHECK_LIB([jpeg], [jpeg_set_defaults], [dnl
     AS_VAR_APPEND([LIBJPEG_LIBS], [" -ljpeg"])
     gd_found_lib=yes
@@ -249,7 +259,7 @@ GD_LIB_PKG_CHECK([LIBJPEG], [JPEG], [jpeg], [libjpeg], [
 ])
 
 dnl Check for libimagequant support.
-GD_LIB_CHECK([LIBIMAGEQUANT], [LIQ], [liq], [
+GD_LIB_CHECK([LIBIMAGEQUANT], [LIQ], [
   AC_CHECK_HEADER([libimagequant.h], [
     save_CFLAGS=$CFLAGS
     CFLAGS="$CFLAGS $OPENMP_CFLAGS"
@@ -262,7 +272,7 @@ GD_LIB_CHECK([LIBIMAGEQUANT], [LIQ], [liq], [
 ])
 
 dnl Check for xpm support.
-GD_LIB_PKG_CHECK([LIBXPM], [XPM], [xpm], [xpm], [
+GD_LIB_PKG_CHECK([LIBXPM], [XPM], [xpm], [
   AC_CHECK_LIB([Xpm], [XpmReadFileToXpmImage], [dnl
     AS_VAR_APPEND([LIBXPM_LIBS], [" -lXpm"])
     gd_found_lib=yes
@@ -270,7 +280,7 @@ GD_LIB_PKG_CHECK([LIBXPM], [XPM], [xpm], [xpm], [
 ])
 
 dnl Check for tiff support.
-GD_LIB_PKG_CHECK([LIBTIFF], [TIFF], [tiff], [libtiff-4], [
+GD_LIB_PKG_CHECK([LIBTIFF], [TIFF], [libtiff-4], [
   AC_CHECK_LIB([tiff], [TIFFClientOpen], [dnl
     AS_VAR_APPEND([LIBTIFF_LIBS], [" -ltiff"])
     gd_found_lib=yes
@@ -278,9 +288,24 @@ GD_LIB_PKG_CHECK([LIBTIFF], [TIFF], [tiff], [libtiff-4], [
 ])
 
 dnl Check for webp support.
-GD_LIB_PKG_CHECK([LIBWEBP], [WEBP], [webp], [libwebp], [
+GD_LIB_PKG_CHECK([LIBWEBP], [WEBP], [libwebp >= 0.2.0], [
   AC_CHECK_LIB([webp], [WebPGetInfo], [dnl
     AS_VAR_APPEND([LIBWEBP_LIBS], [" -lwebp"])
+    gd_found_lib=yes
+  ])
+])
+
+dnl Check for heif support.
+GD_LIB_PKG_CHECK([LIBHEIF], [HEIF], [libheif >= 1.7.0], [
+  AC_CHECK_LIB([heif], [heif_get_version], [dnl
+    AS_VAR_APPEND([LIBHEIF_LIBS], [" -lheif"])
+  ])
+])
+
+dnl Check for avif support.
+GD_LIB_PKG_CHECK([LIBAVIF], [AVIF], [libavif >= 0.8.2], [
+  AC_CHECK_LIB([avif], [avifVersion], [dnl
+    AS_VAR_APPEND([LIBAVIF_LIBS], [" -lavif"])
     gd_found_lib=yes
   ])
 ])
@@ -314,6 +339,8 @@ AC_MSG_RESULT([
    Support for PNG library:          $gd_with_LIBPNG
    Support for JPEG library:         $gd_with_LIBJPEG
    Support for WebP library:         $gd_with_LIBWEBP
+   Support for HEIF library:         $gd_with_LIBHEIF
+   Support for AVIF library:         $gd_with_LIBAVIF
    Support for TIFF library:         $gd_with_LIBTIFF
    Support for Freetype 2.x library: $gd_with_LIBFREETYPE
    Support for Fontconfig library:   $gd_with_LIBFONTCONFIG

@@ -77,6 +77,11 @@ gdPngErrorHandler (png_structp png_ptr, png_const_charp msg)
 
 	longjmp (jmpbuf_ptr->jmpbuf, 1);
 }
+
+static void gdPngWarningHandler (png_structp png_ptr, png_const_charp msg)
+{
+	gd_error_ex(GD_WARNING, "gd-png: libpng warning: %s", msg);
+}
 #endif
 
 static void
@@ -235,7 +240,7 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromPngCtx (gdIOCtx * infile)
 	}
 
 #ifdef PNG_SETJMP_SUPPORTED
-	png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, &jbw, gdPngErrorHandler, NULL);
+	png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, &jbw, gdPngErrorHandler, gdPngWarningHandler);
 #else
 	png_ptr = png_create_read_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 #endif
@@ -385,7 +390,8 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromPngCtx (gdIOCtx * infile)
 
 	case PNG_COLOR_TYPE_GRAY_ALPHA:
 		png_set_gray_to_rgb(png_ptr);
-
+		// fall through
+		// Keep above comment, gcc recognizes it and silent its warning about fall through case here
 	case PNG_COLOR_TYPE_RGB:
 	case PNG_COLOR_TYPE_RGB_ALPHA:
 		/* gd 2.0: we now support truecolor. See the comment above
@@ -408,6 +414,11 @@ BGD_DECLARE(gdImagePtr) gdImageCreateFromPngCtx (gdIOCtx * infile)
 		gd_error("gd-png color_type is unknown: %d\n", color_type);
 		goto error;
 	}
+
+	/* enable the interlace transform if supported */
+#ifdef PNG_READ_INTERLACING_SUPPORTED
+	(void)png_set_interlace_handling(png_ptr);
+#endif
 
 	png_read_update_info (png_ptr, info_ptr);
 
@@ -786,7 +797,7 @@ static int _gdImagePngCtxEx(gdImagePtr im, gdIOCtx * outfile, int level)
 #ifdef PNG_SETJMP_SUPPORTED
 	png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING,
 	                                   &jbw, gdPngErrorHandler,
-	                                   NULL);
+	                                   gdPngWarningHandler);
 #else
 	png_ptr = png_create_write_struct (PNG_LIBPNG_VER_STRING, NULL, NULL, NULL);
 #endif
@@ -1073,11 +1084,12 @@ static int _gdImagePngCtxEx(gdImagePtr im, gdIOCtx * outfile, int level)
 			}
 
 			png_write_image (png_ptr, row_pointers);
-			png_write_end (png_ptr, info_ptr);
 
 			for (j = 0; j < height; ++j)
 				gdFree (row_pointers[j]);
 			gdFree (row_pointers);
+
+			png_write_end (png_ptr, info_ptr);
 		} else {
 			png_write_image (png_ptr, im->pixels);
 			png_write_end (png_ptr, info_ptr);
@@ -1098,47 +1110,66 @@ static void _noPngError(void)
 
 BGD_DECLARE(gdImagePtr) gdImageCreateFromPng (FILE * inFile)
 {
+	ARG_NOT_USED(inFile);
 	_noPngError();
 	return NULL;
 }
 
 BGD_DECLARE(gdImagePtr) gdImageCreateFromPngPtr (int size, void *data)
 {
+	ARG_NOT_USED(size);
+	ARG_NOT_USED(data);
 	return NULL;
 }
 
 BGD_DECLARE(gdImagePtr) gdImageCreateFromPngCtx (gdIOCtx * infile)
 {
+	ARG_NOT_USED(infile);
 	return NULL;
 }
 
 BGD_DECLARE(void) gdImagePngEx (gdImagePtr im, FILE * outFile, int level)
 {
+	ARG_NOT_USED(im);
+	ARG_NOT_USED(outFile);
+	ARG_NOT_USED(level);
 	_noPngError();
 }
 
 BGD_DECLARE(void) gdImagePng (gdImagePtr im, FILE * outFile)
 {
+	ARG_NOT_USED(im);
+	ARG_NOT_USED(outFile);
 	_noPngError();
 }
 
 BGD_DECLARE(void *) gdImagePngPtr (gdImagePtr im, int *size)
 {
+	ARG_NOT_USED(im);
+	ARG_NOT_USED(size);
 	return NULL;
 }
 
 BGD_DECLARE(void *) gdImagePngPtrEx (gdImagePtr im, int *size, int level)
 {
+	ARG_NOT_USED(im);
+	ARG_NOT_USED(size);
+	ARG_NOT_USED(level);
 	return NULL;
 }
 
 BGD_DECLARE(void) gdImagePngCtx (gdImagePtr im, gdIOCtx * outfile)
 {
+	ARG_NOT_USED(im);
+	ARG_NOT_USED(outfile);
 	_noPngError();
 }
 
 BGD_DECLARE(void) gdImagePngCtxEx (gdImagePtr im, gdIOCtx * outfile, int level)
 {
+	ARG_NOT_USED(im);
+	ARG_NOT_USED(outfile);
+	ARG_NOT_USED(level);
 	_noPngError();
 }
 

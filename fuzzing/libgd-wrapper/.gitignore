@@ -1,1 +1,5 @@
 wrapper
+
+libgd/.*
+libgd/docs/tmp/*
+libgd/src/gdlib.pc

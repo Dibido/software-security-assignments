@@ -191,7 +191,11 @@ int read_header_tga(gdIOCtx *ctx, oTga *tga)
 			return -1;
 		}
 
-		gdGetBuf(tga->ident, tga->identsize, ctx);
+		
+		if (gdGetBuf(tga->ident, tga->identsize, ctx) != tga->identsize) {
+			gd_error("fail to read header ident");
+			return -1;
+		}
 	}
 
 	return 1;
@@ -233,7 +237,7 @@ int read_image_tga( gdIOCtx *ctx, oTga *tga )
 	if (tga->imagetype != TGA_TYPE_RGB && tga->imagetype != TGA_TYPE_RGB_RLE)
 		return -1;
 
-	/*!	\brief Allocate memmory for image block
+	/*!	\brief Allocate memory for image block
 	 *  Allocate a chunk of memory for the image block to be passed into.
 	 */
 	tga->bitmap = (int *) gdMalloc(image_block_size * sizeof(int));

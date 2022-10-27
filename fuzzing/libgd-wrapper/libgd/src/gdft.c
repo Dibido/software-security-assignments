@@ -100,7 +100,7 @@ static char *font_path(char **fontpath, char *name_list);
  *
  * Alias of <gdImageStringFT>.
  */
-BGD_DECLARE(char *) gdImageStringTTF (gdImage * im, int *brect, int fg, const char *fontlist,
+BGD_DECLARE(char *) gdImageStringTTF (gdImagePtr im, int *brect, int fg, const char *fontlist,
                                       double ptsize, double angle, int x, int y, const char *string)
 {
 	/* 2.0.6: valid return */
@@ -109,7 +109,7 @@ BGD_DECLARE(char *) gdImageStringTTF (gdImage * im, int *brect, int fg, const ch
 }
 
 #ifndef HAVE_LIBFREETYPE
-BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const char *fontlist,
+BGD_DECLARE(char *) gdImageStringFTEx (gdImagePtr im, int *brect, int fg, const char *fontlist,
                                        double ptsize, double angle, int x, int y, const char *string,
                                        gdFTStringExtraPtr strex)
 {
@@ -127,7 +127,7 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 	return "libgd was not built with FreeType font support\n";
 }
 
-BGD_DECLARE(char *) gdImageStringFT (gdImage * im, int *brect, int fg, const char *fontlist,
+BGD_DECLARE(char *) gdImageStringFT (gdImagePtr im, int *brect, int fg, const char *fontlist,
                                      double ptsize, double angle, int x, int y, const char *string)
 {
 	(void)im;
@@ -431,11 +431,14 @@ gdTcl_UtfToUniChar (const char *str, Tcl_UniChar * chPtr)
 
 #ifdef HAVE_LIBRAQM
 #include <raqm.h>
+#else
+#define RAQM_VERSION_ATLEAST(a,b,c) 0
 #endif
 
 typedef struct {
 	unsigned int index;
 	FT_Pos x_advance;
+	FT_Pos y_advance;
 	FT_Pos x_offset;
 	FT_Pos y_offset;
 	uint32_t cluster;
@@ -483,6 +486,7 @@ textLayout(uint32_t *text, int len,
 		info[i].x_offset = glyphs[i].x_offset;
 		info[i].y_offset = glyphs[i].y_offset;
 		info[i].x_advance = glyphs[i].x_advance;
+		info[i].y_advance = glyphs[i].y_advance;
 		info[i].cluster = glyphs[i].cluster;
 	}
 
@@ -520,6 +524,7 @@ textLayout(uint32_t *text, int len,
 		if (delta.x != 0)
 			info[count - 1].x_advance += delta.x;
 		info[count].x_advance = face->glyph->metrics.horiAdvance;
+		info[count].y_advance = 0;
 		info[count].cluster = count;
 
 		/* carriage returns or newlines */
@@ -724,7 +729,7 @@ tweenColorRelease (void *element)
 
 /* draw_bitmap - transfers glyph bitmap to GD image */
 static char *
-gdft_draw_bitmap (gdCache_head_t * tc_cache, gdImage * im, int fg,
+gdft_draw_bitmap (gdCache_head_t *tc_cache, gdImagePtr im, int fg,
                   FT_Bitmap bitmap, int pen_x, int pen_y)
 {
 	unsigned char *pixel = NULL;
@@ -926,7 +931,7 @@ BGD_DECLARE(void) gdFontCacheShutdown ()
  * See also:
  *  - <gdImageString>
  */
-BGD_DECLARE(char *) gdImageStringFT (gdImage * im, int *brect, int fg, const char *fontlist,
+BGD_DECLARE(char *) gdImageStringFT (gdImagePtr im, int *brect, int fg, const char *fontlist,
                                      double ptsize, double angle, int x, int y, const char *string)
 {
 	return gdImageStringFTEx (im, brect, fg, fontlist,
@@ -1091,7 +1096,7 @@ BGD_DECLARE(int) gdFontCacheSetup (void)
 /*    the size of the error introduced by rounding is affected by this number */
 #define METRIC_RES 300
 
-BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const char *fontlist,
+BGD_DECLARE(char *) gdImageStringFTEx (gdImagePtr im, int *brect, int fg, const char *fontlist,
                                        double ptsize, double angle, int x, int y, const char *string,
                                        gdFTStringExtraPtr strex)
 {
@@ -1131,7 +1136,7 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 	 */
 	gdCache_head_t *tc_cache;
 	/* Tuneable horizontal and vertical resolution in dots per inch */
-	int hdpi, vdpi, horiAdvance, xshow_alloc = 0, xshow_pos = 0;
+	int hdpi, vdpi, horiAdvance, vertAdvance, xshow_alloc = 0, xshow_pos = 0;
 	FT_Size platform_specific, platform_independent;
 
 	if (strex) {
@@ -1244,7 +1249,6 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 	for (i = 0; i < face->num_charmaps; i++) {
 		charmap = face->charmaps[i];
 
-#if ((defined(FREETYPE_MAJOR)) && (((FREETYPE_MAJOR == 2) && (((FREETYPE_MINOR == 1) && (FREETYPE_PATCH >= 3)) || (FREETYPE_MINOR > 1))) || (FREETYPE_MAJOR > 2)))
 		if (encoding == gdFTEX_Unicode) {
 			if (charmap->encoding == FT_ENCODING_MS_SYMBOL
 			        || charmap->encoding == FT_ENCODING_UNICODE
@@ -1277,27 +1281,6 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 				break;
 			}
 		}
-#else
-		if (encoding == gdFTEX_Unicode) {
-			if ((charmap->platform_id = 3 && charmap->encoding_id == 1)     /* Windows Unicode */
-			        || (charmap->platform_id == 3 && charmap->encoding_id == 0) /* Windows Symbol */
-			        || (charmap->platform_id == 2 && charmap->encoding_id == 1) /* ISO Unicode */
-			        || (charmap->platform_id == 0)) {                        /* Apple Unicode */
-				encodingfound++;
-				break;
-			}
-		} else if (encoding == gdFTEX_Big5) {
-			if (charmap->platform_id == 3 && charmap->encoding_id == 4) {   /* Windows Big5 */
-				encodingfound++;
-				break;
-			}
-		} else if (encoding == gdFTEX_Shift_JIS) {
-			if (charmap->platform_id == 3 && charmap->encoding_id == 2) {   /* Windows Sjis */
-				encodingfound++;
-				break;
-			}
-		}
-#endif
 	}
 	if (encodingfound) {
 		FT_Set_Charmap(face, charmap);
@@ -1337,12 +1320,7 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 			/* EAM DEBUG */
 			/* TBB: get this exactly right: 2.1.3 *or better*, all possible cases. */
 			/* 2.0.24: David R. Morrison: use the more complete ifdef here. */
-#if ((defined(FREETYPE_MAJOR)) && (((FREETYPE_MAJOR == 2) && (((FREETYPE_MINOR == 1) && (FREETYPE_PATCH >= 3)) || (FREETYPE_MINOR > 1))) || (FREETYPE_MAJOR > 2)))
-			if (charmap->encoding == FT_ENCODING_MS_SYMBOL)
-#else
-			if (charmap->platform_id == 3 && charmap->encoding_id == 0)
-#endif /* Freetype 2.1 or better */
-			{
+			if (charmap->encoding == FT_ENCODING_MS_SYMBOL) {
 				/* I do not know the significance of the constant 0xf000. */
 				/* It was determined by inspection of the character codes */
 				/* stored in Microsoft font symbol.ttf                    */
@@ -1418,6 +1396,9 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 		gdFree (tmpstr);
 		gdCacheDelete (tc_cache);
 		gdMutexUnlock (gdFontCacheMutex);
+		if (info) {
+			gdFree(info);
+		}
 		return "Problem doing text layout";
 	}
 
@@ -1457,6 +1438,7 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 					gdFree(text);
 					gdCacheDelete (tc_cache);
 					gdMutexUnlock (gdFontCacheMutex);
+					gdFree(info);
 					return "Problem allocating memory";
 				}
 				xshow_pos = 0;
@@ -1469,6 +1451,7 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 					gdFree(text);
 					gdCacheDelete (tc_cache);
 					gdMutexUnlock (gdFontCacheMutex);
+					gdFree(info);
 					return "Problem allocating memory";
 				}
 			}
@@ -1485,10 +1468,12 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 			gdFree(text);
 			gdCacheDelete (tc_cache);
 			gdMutexUnlock (gdFontCacheMutex);
+			gdFree(info);
 			return "Problem loading glyph";
 		}
 
 		horiAdvance = info[i].x_advance;
+		vertAdvance = info[i].y_advance;
 
 		if (brect) {
 			/* only if need brect */
@@ -1533,6 +1518,7 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 				gdFree(text);
 				gdCacheDelete (tc_cache);
 				gdMutexUnlock (gdFontCacheMutex);
+				gdFree(info);
 				return "Problem loading glyph";
 			}
 
@@ -1548,6 +1534,7 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 					gdFree(text);
 					gdCacheDelete (tc_cache);
 					gdMutexUnlock (gdFontCacheMutex);
+					gdFree(info);
 					return "Problem rendering glyph";
 				}
 			}
@@ -1558,15 +1545,22 @@ BGD_DECLARE(char *) gdImageStringFTEx (gdImage * im, int *brect, int fg, const c
 			(the estimate was rounded up to next 1/METRIC_RES, so this should fit) */
 			FT_Pos pen_x = penf.x + info[i].x_offset;
 			FT_Pos pen_y = penf.y - info[i].y_offset;
+#if defined(HAVE_LIBRAQM) && RAQM_VERSION_ATLEAST (0, 9, 0)
+			gdft_draw_bitmap (tc_cache, im, fg, bm->bitmap,
+					  (int)(x + pen_x*hdpi/(METRIC_RES*64) + bm->left),
+					  (int)(y - pen_y*vdpi/(METRIC_RES*64) - bm->top));
+#else
 			gdft_draw_bitmap (tc_cache, im, fg, bm->bitmap,
 					  (int)(x + (pen_x * cos_a + pen_y * sin_a)*hdpi/(METRIC_RES*64) + bm->left),
 					  (int)(y - (pen_x * sin_a - pen_y * cos_a)*vdpi/(METRIC_RES*64) - bm->top));
+#endif
 
 			FT_Done_Glyph (image);
 		}
 
 
 		penf.x += horiAdvance;
+		penf.y += vertAdvance;
 	}
 
 	gdFree(text);

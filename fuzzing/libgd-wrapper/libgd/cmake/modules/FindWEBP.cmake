@@ -37,17 +37,16 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-include(FindZLIB)
-
-find_path(WEBP_INCLUDE_DIR decode.h
-/usr/local/include/webp
-/usr/include/webp
+find_path(WEBP_INCLUDE_DIR
+  NAMES decode.h
+  PATHS /usr/local/include /usr/include
+  PATH_SUFFIXES webp
 )
 
 set(WEBP_NAMES ${WEBP_NAMES} webp)
 find_library(WEBP_LIBRARY
   NAMES ${WEBP_NAMES}
-  PATHS "${PROJECT_SOURCE_DIR}/../deps/lib" /usr/lib64 /usr/lib /usr/local/lib
+  PATHS /usr/lib64 /usr/lib /usr/local/lib
   )
 
 if (WEBP_LIBRARY AND WEBP_INCLUDE_DIR)
