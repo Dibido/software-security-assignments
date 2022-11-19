@@ -17,7 +17,11 @@ else
             echo Using fuzzer AFL.
             CC=afl-cc
             CXX=afl-c++
-            AFL_C_ARGS=
+            ;;
+        "hfuzz")
+            echo Using fuzzer Honggfuzz.
+            CC=hfuzz-gcc
+            CXX=hfuzz-g++
             ;;
         "n")
             echo Using default compiler $CC/$CXX.
@@ -39,9 +43,10 @@ fi
 
 cd libgd
 ./cmake/distclean.sh
-cmake CMakeLists.txt -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_C_FLAGS="$SAN_ARG" -DCMAKE_CXX_FLAGS="$SAN_ARG"
+cmake CMakeLists.txt -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_C_COMPILER=$CC -DCMAKE_CXX_COMPILER=$CXX -DCMAKE_C_FLAGS="$SAN_ARG" -DCMAKE_CXX_FLAGS="$SAN_ARG"
 make
 cd ..
 
 rm wrapper
-$CC $SAN_ARG -o wrapper main.c libgd/Bin/libgd.so -lm
+$CC $SAN_ARG -o wrapper main.c libgd/Bin/libgd.a -lm
+echo Used compiler $CC/$CXX.
