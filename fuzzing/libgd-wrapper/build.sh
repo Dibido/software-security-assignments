@@ -20,8 +20,8 @@ else
             ;;
         "hfuzz")
             echo Using fuzzer Honggfuzz.
-            CC=hfuzz-gcc
-            CXX=hfuzz-g++
+            CC=hfuzz-clang
+            CXX=hfuzz-clang++
             ;;
         "n")
             echo Using default compiler $CC/$CXX.
